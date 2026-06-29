@@ -1,57 +1,58 @@
+// npm init
+// npm i express
+// instalar extensão RapidAPI Client no VSCode
 const express = require("express")
-const fs = require("fs")
-const path = require("path")
-
 const app = express()
 const port = 3000
-const NOME_ARQUIVO = path.join(__dirname, "bd.json")
+app.use(express.json())
+const fs = require('fs')
 
-function lerBancoDeDados() {
-    // Se o arquivo não existir, cria com colchetes
-    if (!fs.existsSync(NOME_ARQUIVO)) {
-        fs.writeFileSync(NOME_ARQUIVO, "[]", "utf8")
-        return []
+app.post("/clientes", (req, res) => {
+    const cliente = req.body
+    try {
+        // abrir o arquivo
+        const bd = JSON.parse(fs.readFileSync("bd.json", "utf8"))
+        // adicionar o cliente
+        bd.push(cliente)
+        // salvar o arquivo
+        fs.writeFileSync("bd.json", JSON.stringify(bd), "utf8")
+        // resposta
+        res.status(201).json({resposta: "Cliente cadastrado!"})
+    } catch (erro) {
+        res.status(500).json({erro: erro.message})
     }
-    
-    let conteudo = fs.readFileSync(NOME_ARQUIVO, "utf8").trim()
-    
-    // CORREÇÃO DEFINITIVA: Se o arquivo existir mas estiver vazio, corrige gravando "[]"
-    if (conteudo === "") {
-        fs.writeFileSync(NOME_ARQUIVO, "[]", "utf8")
-        return []
-    }
-    
-    return JSON.parse(conteudo)
-}
+})
 
 app.get("/clientes", (req, res) => {
     try {
-        const bd = lerBancoDeDados()
-        res.status(200).json(bd)
+        const bd = JSON.parse(fs.readFileSync("bd.json", "utf8"))
+        res.status(200).json({resposta: bd})
     } catch (erro) {
-        res.status(500).json({ erro: "Erro ao ler banco de dados: " + erro.message })
+        res.status(500).json({erro: erro.message})
     }
 })
+
 
 app.get("/clientes/:cpf", (req, res) => {
-    const cpf = req.params.cpf
+    const cpf =req.params.cpf
     try {
-        const bd = lerBancoDeDados()
-        const cliente = bd.find((cliente) => cliente.cpf == cpf)
-        if (!cliente) {
-            return res.status(404).json({ erro: "Cliente não existe no BD!" })
+        const bd = JSON.parse(fs.readFileSync("bd.json", "utf8"))
+        const cliente = bd.find((cliente)=> cliente.cpf ==cpf)
+        if(!cliente){
+        return res.status(404).json({erro: "Cliente não existe no BD"})
         }
-        res.status(200).json({ resposta: cliente })
+
+    res.status(200).json({resposta: cliente})
     } catch (erro) {
-        res.status(500).json({ erro: "Erro ao buscar cliente: " + erro.message })
+        res.status(500).json({erro: erro.message})
     }
 })
 
-app.listen(port, () => {
-    console.log("-----------------------------------------")
-    console.log(" API rodando com sucesso!")
-    console.log(` Acesse no navegador: http://localhost:${port}/clientes`)
-    console.log("-----------------------------------------")
+
+
+app.listen(port, ()=>{
+    console.log("API rodando na porta" + port)
 })
 
-
+// GET http://localhost:3000/clientes
+// testar todas as rotas : post, get geral get cpf
